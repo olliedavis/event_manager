@@ -2,12 +2,13 @@ require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
 require 'time'
+require 'date'
 
 $hours_arr = Array.new
+$days_arr = Array.new
 
-lib = "/home/ollie/event_manager/"
 contents = CSV.open "../event_attendees.csv", headers: true, header_converters: :symbol
-#template_letter = File.read "#{lib}/form_letter.erb"
+#template_letter = File.read "../form_letter.erb"
 #erb_template = ERB.new template_letter
 
 def clean_zipcode(zipcode)
@@ -50,8 +51,10 @@ contents.each do |row|
   id = row[0]
   name = row[:first_Name]
   time = row[:regdate]
-  hours = DateTime.strptime(time, '%m/%d/%y %H:%M').hour
-  $hours_arr.push(hours)
+  date = DateTime.strptime(time, '%m/%d/%y %H:%M')
+
+  $hours_arr.push(date.hour)
+  $days_arr.push(date.wday)
   phone = clean_number(row[:homephone])
   #zipcode = clean_zipcode(row[:zipcode])
   #legislators = legislators_by_zipcode(zipcode)
@@ -60,12 +63,30 @@ contents.each do |row|
 end
 
 # returns the mode average of the hour of signups
-def average_sign_up_time(hours)
-  mode_hash = Hash.new(0)
+def average_sign_up_time(hours_arr)
+  mode_hours_hash = Hash.new(0)
   $hours_arr.each do |int|
-    mode_hash[int] += 1
+    mode_hours_hash[int] += 1
   end
-  puts mode_hash.key(mode_hash.values.max)
+  mode_hours_hash.key(mode_hours_hash.values.max)
 end
 
-average_sign_up_time($hours_arr)
+
+def average_sign_up_days(days_arr)
+  mode_days_hash = Hash.new(0)
+  $days_arr.each do |int|
+    mode_days_hash[int] += 1
+  end
+  mode_days_hash.key(mode_days_hash.values.max)
+end
+
+
+def average_day_and_time
+  time = average_sign_up_time($hours_arr)
+  day = average_sign_up_days($days_arr)
+  weekday =  Date::DAYNAMES[day]
+  puts "The most common day to sign up is on #{weekday}"
+  puts "The most common time of the day to sign up is #{time}:00"
+end
+  
+average_day_and_time
